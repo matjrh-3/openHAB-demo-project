@@ -1,0 +1,34 @@
+sitemap home label="Main Menu" {
+  Frame {
+    Group item=gHome	label="Home"	icon="firstfloor"
+  }
+
+  Frame label="Date" {                                                    
+    Text   item=Date
+  }
+
+  Frame label="Demo" {
+    Text label="Multimedia" icon="video" {
+      Frame label="Radio Control" {
+        Selection item=Radios
+           mappings=[0=off, 1=Nrj, 2=Rix, 3=Vinyl, 4=Rock, 5=Lugna]
+        Slider item=Volume
+      }
+      Frame label="Multimedia Widgets" {
+        Image url="https://servicedesk.ltu.se/images/logo_svensk.jpg" label="LTU" height=8 {
+          Text label="https://servicedesk.ltu.se/images/logo_svensk.jpg" icon="icon"
+        }
+        Webview url="http://www.dn.se/" height=25
+      }
+    }
+  }
+
+  Frame label="Status" {
+    Group item=gStat  label="Status" icon="energy"
+  }
+
+  Frame label="Weather" {
+    Text   item=Weather
+    Text   item=Elevation
+  }
+}

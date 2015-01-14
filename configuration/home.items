@@ -1,0 +1,42 @@
+Group All
+Group gHome	(All)
+Group gOut	(All)
+Group gStat
+
+Group gH_Hall	"Corridor"	<corridor>	(gHome)
+Group gH_Living	"Living room"	<video>		(gHome)
+
+Switch	gH_living_light		"Lightbulb"	(gH_Living) { zwave="5" }
+
+/* Switch with power meter */
+Switch	gH_corridor_light "On/Off switch" <switch>  (gH_Hall) { zwave="4:command=switch_binary" }
+Group corr_sw "Light switch" <switch> (gStat)
+Number  gH_corridor_power "Corridor power [%.1f W]"  (corr_sw) { zwave="4:command=meter,meter_scale=E_W" }
+Number gH_corridor_energy "Corridor energy [%.2f kWh]" (corr_sw) { zwave="4:command=meter,meter_scale=E_KWh" }
+
+
+/* Multisensor */
+
+Group mSens "Multisensor" (gStat)
+Number  MS_temp   "Temperature [%.1f C]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=1, sensor_scale=0" }
+Number  MS_hum    "Humidity [%.0f %%]"   (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=5" }
+Number  MS_lum    "Lumination [%.0f Lux]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=3" }
+Contact MS_motion "sensor [MAP(motion.map):%s]" (mSens) { zwave="6:command=sensor_binary, respond_to_basic=true" }
+Number  MS_bat    "Sensor battery [%s %%]" (mSens) { zwave="6:command=battery" }
+
+
+DateTime	Date	"Date [%1$tA, %1$td.%1$tm.%1$tY]" <calendar> { ntp="Europe/Stockholm:se_SE" }
+
+String  Weather "Weather [%s]" <temperature> { http="<[http://www.yr.no/sted/Sverige/Norrbotten/Boden/varsel.xml:60000:XSLT(yr_weatherforecast.xsl)]" }
+Number	Radios	  "Radio"	<network>
+Dimmer	Volume	  "Volume [%.1f %%]"
+Number  Elevation "Sun elevation [%.2f]" <sun> { astro="planet=sun, type=position, property=elevation" }
+// String Test "Coap [%s]" <wind> {http="<[coap://240.130.94.44/Testing:10000:]"}
+
+/* Keypad */
+/*
+Group keyP "Keypad" <keyring> (gStat)
+String key_code "Keypad code [%s]"   (keyP) { zwave="3:command=user_code_report" }
+String key_alm  "Keypad alarm [%s]"  (keyP) { zwave="3:command=alarm_report_v2" }
+Number key_bat  "Keypad battery [%.1f]" (keyP) { zwave="3:command=battery" }
+*/

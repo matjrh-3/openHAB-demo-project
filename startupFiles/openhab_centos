@@ -1,0 +1,159 @@
+#!/bin/bash
+#
+# openhab        Startup script for OpenHAB Daemon
+#
+# chkconfig: - 95 20
+# description: The open Home Automation Bus (openHAB) project aims at \
+#		providing a universal integration platform for all things \
+#		around home automation
+# processname: openhab
+#
+### BEGIN INIT INFO
+# Provides: openhab
+# Required-Start: $local_fs $remote_fs $network
+# Required-Stop: $local_fs $remote_fs $network
+# Short-Description: Startup script for OpenHAB Daemon
+# Description: The open Home Automation Bus (openHAB) project aims at \
+#		providing a universal integration platform for all things \
+#		around home automation
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+if [ -f /etc/sysconfig/openhab.conf ]; then
+        . /etc/sysconfig/openhab.conf
+fi
+
+NAME=openhab
+DESC="Open Home Automation Bus Daemon"
+DAEMON="/usr/bin/java"
+ECLIPSE_HOME=/usr/local/openhab
+PID_FILE=/var/run/$NAME.pid
+LOG_FILE=/usr/local/openhab/logs/openhab.log
+DEBUG="n"
+HTTP_PORT=8080
+HTTPS_PORT=8444
+TELNET_PORT=8020
+
+# get path to equinox jar inside $eclipsehome folder
+JAR=$(find $ECLIPSE_HOME/server -name "org.eclipse.equinox.launcher_*.jar" | sort | tail -1)
+
+OH_OPTS="-Dosgi.clean=true \
+ -Declipse.ignoreApp=true \
+ -Dosgi.noShutdown=true \
+ -Djetty.port=$HTTP_PORT \
+ -Djetty.port.ssl=$HTTPS_PORT \
+ -Djetty.home=. \
+ -Dlogback.configurationFile=./configurations/logback.xml \
+ -Dfelix.fileinstall.dir=./addons \
+ -Djava.library.path=./lib \
+ -Djava.security.auth.login.config=./etc/login.conf \
+ -Dorg.quartz.properties=./etc/quartz.properties \
+ -Dequinox.ds.block_timeout=240000 -Dequinox.scr.waitTimeOnBlock=60000 \
+ -Dfelix.fileinstall.active.level=4 \
+ -Djava.awt.headless=true \
+ -jar $JAR \
+ -console ${TELNET_PORT}"
+OH_DEBUG_OPTS="-Xdebug -Xnoagent \
+ -Djava.compiler=NONE \
+ -Xrunjdwp:transport=dt_socket,address=8001,server=y,suspend=n \
+ $OH_OPTS"
+
+oh_status() {
+    PID=$(ps -ef | grep -v grep | grep $NAME | grep java | awk '{print $2}')
+    if [ "x" != "x$PID" ]; then
+	echo $PID
+	return 1
+    fi
+     echo 0
+}
+
+oh_start()
+{
+    cd $ECLIPSE_HOME
+    PID=$(oh_status)
+    if [ ! -f "$PID_FILE" ] && [ $PID -eq 0 ]; then
+	case $DEBUG in
+	    yes|y|YES|Y)
+		OPTS=$OH_DEBUG_OPTS
+	    ;;
+	    no|n|NO|N)
+		OPTS=$OH_OPTS
+	    ;;
+	esac
+
+	if [ $(id -u $USER) -eq 0 ]; then
+	    $DAEMON $OPTS > $LOG_FILE 2>&1 &
+	else
+    	    su - $USER -c "$DAEMON $OPTS > $LOG_FILE 2>&1 &"
+    	fi
+	sleep 1
+	PID=$(oh_status)
+	if [ $PID -eq 0 ]; then
+            RETVAL=0
+	else
+	    echo $PID > $PID_FILE
+            RETVAL=1
+        fi
+    else
+        RETVAL=0
+    fi
+    echo $RETVAL
+}
+
+oh_stop()
+{
+    if [ -n "$PID_FILE" ]; then
+	if [ -e "$PID_FILE" ]; then
+    	    kill -9 `cat $PID_FILE` 2> /dev/null
+    	    RETVAL=1
+        else
+    	    RETVAL=0
+        fi
+    else
+	RETVAL=0
+    fi
+    echo $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n $"Starting $DESC: "
+	r=$(oh_start)
+	if [ $r -gt 0 ]; then
+	    success; echo
+	else
+	    failure; echo
+	fi
+	;;
+  stop)
+	echo -n $"Stopping $DESC: "
+	r=$(oh_stop)
+	if [ $r -gt 0 ]; then
+	    rm -f ${PID_FILE}
+	    success; echo
+	else
+	    failure; echo
+	fi
+	;;
+    status)
+	r=$(oh_status)
+	if [ $r -eq 0 ]; then
+            echo $"$DESC is down."
+	else
+            echo $"$DESC is running (PID $r)."
+        fi
+	;;
+  restart)
+	echo -n $"Restarting $DESC: "; echo
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|status}"
+	exit 1
+esac
+
+exit $RETVAL
