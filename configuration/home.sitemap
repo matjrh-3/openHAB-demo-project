@@ -23,12 +23,9 @@ sitemap home label="Main Menu" {
     }
   }
 
-  Frame label="Status" {
-    Group item=gStat  label="Status" icon="energy"
-  }
-
   Frame label="Weather" {
     Text   item=Weather
-    Text   item=Elevation
+    Group  item=Sun
+    Group  item=Moon
   }
 }

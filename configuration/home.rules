@@ -8,17 +8,18 @@ var Timer timer = null
 
 rule "Sun elevation control"
   when
-    Item Elevation changed
+    Item S_Elev changed
   then
-    var double elevation = new Double(Elevation.state.toString())
-    if (elevation < -3.0) {
+    var double elevation = new Double(S_Elev.state.toString())
+    if (elevation < .6) {
       sendCommand(gH_living_light, ON)
     } else {
       sendCommand(gH_living_light, OFF)
     }
+
 end
 
-
+/*
 rule "Corridor light timer"
   when
     Item gH_corridor_light received command
@@ -27,7 +28,7 @@ rule "Corridor light timer"
       if timer == null) {
         // First ON command, create a timer to turn the light off
         timer=createTimer(now.plusSeconds(60) [|
-           sendCommand(gH_corridor_light,OFF)])
+-----           sendCommand(gH_corridor_light,ON)])
       } else {
         // Subsequent ON command, just "reset" the timer...
        timer.reschedule(now.plusSeconds(60))
@@ -41,19 +42,26 @@ rule "Corridor light timer"
     }
   }
 end
-
+*/
 
 rule "Motion detected"
   when
-    Item MS_motion changed to ON
+    Item MS_motion changed from CLOSED to OPEN
   then
     sendCommand(gH_corridor_light, ON)
 end
 
+rule "Test coap"
+  when
+    Item MS_temp received update
+  then
+    var double temperat = new Double(MS_temp.state.toString())
+    sendHttpPostRequest("http://130.240.92.118:8085/proxy/coap://localhost:5683/dopost?temp=" + temperat)
+end
 
 rule "No motion detected"
   when
-    Item MS_motion changed to OFF
+    Item MS_motion changed OPEN to CLOSED
   then
     sendCommand(gH_corridor_light, OFF)
 end

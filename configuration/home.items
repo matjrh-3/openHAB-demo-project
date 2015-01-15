@@ -1,37 +1,48 @@
 Group All
 Group gHome	(All)
 Group gOut	(All)
-Group gStat
+Group Sun 	<sun>
+Group Moon	<moon>
 
 Group gH_Hall	"Corridor"	<corridor>	(gHome)
 Group gH_Living	"Living room"	<video>		(gHome)
+
+
+String Test "Coap [%s]" <wind> {http="<[http://130.240.92.118:8085/proxy/coap://localhost:5685/target:10000:REGEX(<[A-Za-z 0-9]*>)]"}
+
+String  Weather "Weather [%s]" <temperature> { http="<[http://www.yr.no/sted/Sverige/Norrbotten/Boden/varsel.xml:60000:XSLT(yr_weatherforecast.xsl)]"}
+/* >[*:POST:http://130.240.94.110:8085/proxy/coap://localhost:5685/target]" }*/
+
 
 Switch	gH_living_light		"Lightbulb"	(gH_Living) { zwave="5" }
 
 /* Switch with power meter */
 Switch	gH_corridor_light "On/Off switch" <switch>  (gH_Hall) { zwave="4:command=switch_binary" }
-Group corr_sw "Light switch" <switch> (gStat)
+Group corr_sw "Light switch" <energy> (gH_Hall)
 Number  gH_corridor_power "Corridor power [%.1f W]"  (corr_sw) { zwave="4:command=meter,meter_scale=E_W" }
 Number gH_corridor_energy "Corridor energy [%.2f kWh]" (corr_sw) { zwave="4:command=meter,meter_scale=E_KWh" }
 
 
 /* Multisensor */
 
-Group mSens "Multisensor" (gStat)
-Number  MS_temp   "Temperature [%.1f C]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=1, sensor_scale=0" }
-Number  MS_hum    "Humidity [%.0f %%]"   (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=5" }
-Number  MS_lum    "Lumination [%.0f Lux]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=3" }
-Contact MS_motion "sensor [MAP(motion.map):%s]" (mSens) { zwave="6:command=sensor_binary, respond_to_basic=true" }
-Number  MS_bat    "Sensor battery [%s %%]" (mSens) { zwave="6:command=battery" }
+Group mSens "Multisensor" <present> (gH_Hall)
+Number  MS_temp   "Temperature [%.1f C]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=1, sensor_scale=0, refresh_interval=60" }
+Number  MS_hum    "Humidity [%.0f %%]"   (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=5, refresh_interval=60" }
+Number  MS_lum    "Lumination [%.0f Lux]" (mSens) { zwave="6:command=SENSOR_MULTILEVEL, sensor_type=3, refresh_interval=60" }
+Contact MS_motion "Movement [MAP(motion.map):%s]" (mSens) { zwave="6:command=SENSOR_BINARY, respond_to_basic=true, refresh_interval=10" }
+Number  MS_bat    "Sensor battery [%s %%]" (mSens) { zwave="6:command=battery, refresh_interval=120" }
 
 
 DateTime	Date	"Date [%1$tA, %1$td.%1$tm.%1$tY]" <calendar> { ntp="Europe/Stockholm:se_SE" }
 
-String  Weather "Weather [%s]" <temperature> { http="<[http://www.yr.no/sted/Sverige/Norrbotten/Boden/varsel.xml:60000:XSLT(yr_weatherforecast.xsl)]" }
 Number	Radios	  "Radio"	<network>
 Dimmer	Volume	  "Volume [%.1f %%]"
-Number  Elevation "Sun elevation [%.2f]" <sun> { astro="planet=sun, type=position, property=elevation" }
-// String Test "Coap [%s]" <wind> {http="<[coap://240.130.94.44/Testing:10000:]"}
+
+Number  S_Elev "Sun elevation [%.2f]" <sun> (Sun) { astro="planet=sun, type=position, property=elevation" }
+Number S_Azim "Sun Azimuth [%.2f]" <sun> (Sun) { astro="planet=sun, type=position, property=azimuth" }
+
+Number M_Elev "Moon elevation [%.2f]" <moon> (Moon) { astro="planet=moon, type=position, property=elevation" }
+Number M_Azim "Moon azimuth [%.2f]" <moon> (Moon) { astro="planet=moon, type=position, property=azimuth" }
 
 /* Keypad */
 /*
